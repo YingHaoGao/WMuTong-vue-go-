@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"regexp"
+	"github.com/sevlyar/go-daemon"
 )
 
 type MyMux struct {
@@ -36,6 +38,30 @@ func Html ( res http.ResponseWriter, req *http.Request) {
 	t.Execute(res, nil)
 }
 
+func _daemon() {
+	cntxt := &daemon.Context{
+		PidFileName: "pid",
+		PidFilePerm: 0644,
+		LogFileName: "log",
+		LogFilePerm: 0640,
+		WorkDir:     "./",
+		Umask:       027,
+		Args:        []string{"[go-daemon sample]"},
+	}
+
+	d, err := cntxt.Reborn()
+	if err != nil {
+		log.Fatal("Unable to run: ", err)
+	}
+	if d != nil {
+		return
+	}
+	defer cntxt.Release()
+
+	log.Print("- - - - - - - - - - - - - - -")
+	log.Print("daemon started")
+}
+
 func Static( res http.ResponseWriter, req *http.Request){
 	fmt.Println("Deal Static: ", req.URL.Path)
 	res.Header().Set("Content-Type", "text/css")
@@ -43,6 +69,7 @@ func Static( res http.ResponseWriter, req *http.Request){
 }
 
 func main () {
+	_daemon()
 	mux := &MyMux{}
 	mux.routers = make(map[string]func(res http.ResponseWriter, req *http.Request))
 	mux.routers["/"] = Html
@@ -53,3 +80,18 @@ func main () {
 		fmt.Printf("Error: %+v", err)
 	}
 }
+//resume/wmutong_go/WMuTong-vue-go-/main
+//
+//[program:golang-http-server]
+//command=/root/resume/wmutong_go/WMuTong-vue-go-/main
+//autostart=true
+//autorestart=true
+//startsecs=10
+//stdout_logfile=/var/log/simple_http_server.log
+//stdout_logfile_maxbytes=1MB
+//stdout_logfile_backups=10
+//stdout_capture_maxbytes=1MB
+//stderr_logfile=/var/log/simple_http_server.log
+//stderr_logfile_maxbytes=1MB
+//stderr_logfile_backups=10
+//stderr_capture_maxbytes=1MB
